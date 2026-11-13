@@ -1,0 +1,105 @@
+[
+  {
+    "source_system": "crm_salesforce",
+    "source_record_id": "SF_1001",
+    "national_id": "999-11-0001",
+    "email": "alice.alt@example.com",
+    "first_name": "Alice",
+    "last_name": "Smith",
+    "postal_code": "94101",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:00:00Z"
+  },
+  {
+    "source_system": "billing_stripe",
+    "source_record_id": "STRIPE_2001",
+    "email": "alice@example.com",
+    "legal_name": "Alice Smith",
+    "postal_code": "94101",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:05:00Z"
+  },
+  {
+    "source_system": "support_zendesk",
+    "source_record_id": "ZD_3001",
+    "phone": "+1 (555) 010-2",
+    "first_name": "Bob",
+    "last_name": "Jones",
+    "postal_code": "10001",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:10:00Z"
+  },
+  {
+    "source_system": "web_segment",
+    "source_record_id": "SEG_4001",
+    "email": "diana.prince@themyscira.io",
+    "phone": "555-0199",
+    "first_name": "Diana",
+    "last_name": "Prince",
+    "date_of_birth": "1990-05-15",
+    "postal_code": "90210",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:15:00Z"
+  },
+  {
+    "source_system": "web_segment",
+    "source_record_id": "SEG_4001",
+    "email": "diana.prince@themyscira.io",
+    "phone": "555-0199",
+    "first_name": "Diana",
+    "last_name": "Prince",
+    "date_of_birth": "1990-05-15",
+    "postal_code": "90210",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:15:00Z"
+  },
+  {
+    "source_system": "crm_salesforce",
+    "source_record_id": "SF_CONFLICT_01",
+    "email": "alice@example.com",
+    "phone": "5550102",
+    "first_name": "Split",
+    "last_name": "Identity",
+    "event_timestamp": "2026-11-10T10:20:00Z"
+  },
+  {
+    "source_system": "legacy_db",
+    "source_record_id": "LEG_AMBIG_01",
+    "first_name": "Charlie",
+    "last_name": "Brown",
+    "postal_code": "60601",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:25:00Z"
+  },
+  {
+    "source_system": "bad_feed",
+    "source_record_id": "BAD_DOB_01",
+    "email": "bad.date@example.com",
+    "first_name": "Bad",
+    "last_name": "Date",
+    "date_of_birth": "31-02-1990",
+    "event_timestamp": "2026-11-10T10:30:00Z"
+  },
+  {
+    "source_system": "bad_feed",
+    "source_record_id": "",
+    "email": "nokey@example.com",
+    "first_name": "No",
+    "last_name": "Key",
+    "event_timestamp": "2026-11-10T10:35:00Z"
+  },
+  {
+    "source_system": "mobile_app",
+    "source_record_id": "MOB_EMPTY_ATTRS",
+    "first_name": "Anonymous",
+    "event_timestamp": "2026-11-10T10:40:00Z"
+  },
+  {
+    "source_system": "billing_stripe",
+    "source_record_id": "STRIPE_2001",
+    "email": "contradictory_email@other.com",
+    "phone": "9999999",
+    "event_timestamp": "2026-11-10T10:45:00Z"
+  }
+]
+

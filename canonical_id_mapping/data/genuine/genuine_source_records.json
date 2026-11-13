@@ -1,0 +1,140 @@
+[
+  {
+    "source_system": "salesforce_crm",
+    "source_record_id": "SF_SATYA_001",
+    "national_id": "US-SSN-987110001",
+    "email": "satya.office@microsoft.com",
+    "first_name": "Satya",
+    "last_name": "Nadella",
+    "postal_code": "98052",
+    "country": "US",
+    "event_timestamp": "2026-11-10T09:00:00Z"
+  },
+  {
+    "source_system": "stripe_billing",
+    "source_record_id": "STRIPE_CUS_JENSEN_01",
+    "email": "jensen@nvidia.com",
+    "legal_name": "Jensen Huang",
+    "postal_code": "95051",
+    "country": "US",
+    "event_timestamp": "2026-11-10T09:15:00Z"
+  },
+  {
+    "source_system": "zendesk_support",
+    "source_record_id": "ZD_TICKET_PATRICK_99",
+    "phone": "+1 (415) 555-0142",
+    "first_name": "Patrick",
+    "last_name": "Collison",
+    "postal_code": "94107",
+    "country": "US",
+    "event_timestamp": "2026-11-10T09:30:00Z"
+  },
+  {
+    "source_system": "academic_registry",
+    "source_record_id": "STANFORD_FEIFEI_07",
+    "first_name": "Fei-Fei",
+    "last_name": "Li",
+    "postal_code": "94305",
+    "country": "US",
+    "event_timestamp": "2026-11-10T09:45:00Z"
+  },
+  {
+    "source_system": "segment_telemetry",
+    "source_record_id": "SEG_USR_SAM_01",
+    "email": "sam@openai.com",
+    "phone": "+1 (415) 555-0155",
+    "first_name": "Sam",
+    "last_name": "Altman",
+    "postal_code": "94110",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:00:00Z"
+  },
+  {
+    "source_system": "linux_kernel_feed",
+    "source_record_id": "GIT_TORVALDS_01",
+    "email": "torvalds@linux-foundation.org",
+    "phone": "+1 (503) 555-0177",
+    "first_name": "Linus",
+    "last_name": "Torvalds",
+    "postal_code": "97229",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:15:00Z"
+  },
+  {
+    "source_system": "shopify_store",
+    "source_record_id": "SHOP_TOBI_01",
+    "email": "tobi@shopify.com",
+    "phone": "+1 (613) 555-0133",
+    "first_name": "Tobias",
+    "last_name": "Lütke",
+    "postal_code": "K1P 1J1",
+    "country": "CA",
+    "event_timestamp": "2026-11-10T10:30:00Z"
+  },
+  {
+    "source_system": "cloud_summit",
+    "source_record_id": "SUMMIT_KELSEY_01",
+    "email": "kelsey@hightower.cloud",
+    "phone": "+1 (503) 555-0166",
+    "first_name": "Kelsey",
+    "last_name": "Hightower",
+    "postal_code": "97201",
+    "country": "US",
+    "event_timestamp": "2026-11-10T10:45:00Z"
+  },
+  {
+    "source_system": "zendesk_support",
+    "source_record_id": "ZD_SPLIT_IDENTITY_01",
+    "email": "satya@microsoft.com",
+    "phone": "4255550199",
+    "first_name": "Satya",
+    "last_name": "Nadella",
+    "event_timestamp": "2026-11-10T11:00:00Z"
+  },
+  {
+    "source_system": "ecommerce_web",
+    "source_record_id": "WEB_AMBIG_MILLER_01",
+    "first_name": "David",
+    "last_name": "Miller",
+    "postal_code": "10001",
+    "country": "US",
+    "event_timestamp": "2026-11-10T11:15:00Z"
+  },
+  {
+    "source_system": "shopify_store",
+    "source_record_id": "ORD_SHOPIFY_88192",
+    "email": "alice.colliding@retail.com",
+    "first_name": "Alice",
+    "last_name": "Collision",
+    "event_timestamp": "2026-11-10T11:30:00Z"
+  },
+  {
+    "source_system": "shopify_store",
+    "source_record_id": "ORD_SHOPIFY_88192",
+    "email": "bob.colliding@different.com",
+    "first_name": "Bob",
+    "last_name": "Collision",
+    "event_timestamp": "2026-11-10T11:30:05Z"
+  },
+  {
+    "source_system": "bad_webhook",
+    "source_record_id": "ERR_CORRUPT_DOB",
+    "email": "corrupt@sample.com",
+    "date_of_birth": "1999-99-99",
+    "event_timestamp": "2026-11-10T11:45:00Z"
+  },
+  {
+    "source_system": "bad_webhook",
+    "source_record_id": "",
+    "email": "missing_id@sample.com",
+    "event_timestamp": "2026-11-10T12:00:00Z"
+  },
+  {
+    "source_system": "telemetry_ping",
+    "source_record_id": "PING_INSUFFICIENT_DATA",
+    "first_name": "Anonymous",
+    "country": "US",
+    "event_timestamp": "2026-11-10T12:15:00Z"
+  }
+]
+

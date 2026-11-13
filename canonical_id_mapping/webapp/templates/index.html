@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdentityMesh • Multi-Dataset Canonical Entity Resolution</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%);
+            min-height: 100vh;
+        }
+        code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* 3D Card Elevations & Interactions */
+        .card-3d {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateZ(0);
+        }
+        .card-3d:hover {
+            transform: translateY(-4px) scale(1.002);
+            box-shadow: 0 20px 35px -5px rgba(99, 102, 241, 0.16), 0 10px 12px -5px rgba(0, 0, 0, 0.04);
+            border-color: rgba(165, 180, 252, 0.8);
+        }
+
+        .drop-zone-3d {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            border: 2px dashed #a5b4fc;
+            transition: all 0.25s ease-in-out;
+        }
+        .drop-zone-3d:hover, .drop-zone-3d.dragover {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            transform: scale(1.01);
+            box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.15);
+        }
+
+        /* Vivid Badges */
+        .badge-exact { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .badge-rule { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-novel { background-color: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+        .badge-conflict { background-color: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .badge-warning { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float { animation: floatSlow 4s ease-in-out infinite; }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.95) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal { animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white/85 backdrop-blur-md border-b border-indigo-100/80 sticky top-0 z-40 transition-all shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center space-x-3.5">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 animate-float">
+                    <i class="fa-solid fa-network-wired text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 tracking-tight">IdentityMesh &bull; Entity Resolution</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200">v2.0 Multi-Dataset</span>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium">Canonical ID Mapping &bull; 1-to-Many Conflict Quarantine &bull; SCD Type 2 Lineage</p>
+                </div>
+            </div>
+
+            <!-- Primary Header Actions -->
+            <div class="flex items-center space-x-2.5">
+                <button onclick="openUploadModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                    <span>Upload Datasets</span>
+                </button>
+                <button id="btn-header-refresh" onclick="refreshAll()" title="Refresh All Data" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 p-2.5 rounded-xl transition shadow-sm">
+                    <i id="btn-header-refresh-icon" class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <button onclick="resetDatabasePrompt()" title="Reset Database to Clean State" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 p-2.5 rounded-xl transition shadow-sm">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+        <!-- Toast Notifications -->
+        <div id="toast-banner" class="hidden rounded-xl p-3.5 text-xs flex items-center justify-between shadow-xl border animate-modal">
+            <div class="flex items-center space-x-2">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-sm"></i>
+                <span id="toast-msg" class="font-bold"></span>
+            </div>
+            <button onclick="this.parentElement.classList.add('hidden')" class="text-base font-bold ml-4 opacity-70 hover:opacity-100">&times;</button>
+        </div>
+
+        <!-- 3-Step Architecture Flow -->
+        <div class="card-3d rounded-2xl p-5 border border-indigo-100">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-400"></span>
+                    <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">How Entity Resolution Works (In 3 Simple Steps)</h2>
+                </div>
+                <span class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">Automated Cross-System Linkage</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+                <!-- Step 1 -->
+                <div class="bg-gradient-to-br from-indigo-50/70 to-white border border-indigo-100/90 rounded-xl p-4 flex items-start space-x-3.5">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-extrabold shadow-md shadow-indigo-300 shrink-0">1</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">1. Multi-Source Ingestion</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">Upload tables from disparate datasets (e.g. Table A & Table B). Each catalog has different IDs or formats for the same entity.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-gradient-to-br from-purple-50/70 to-white border border-purple-100/90 rounded-xl p-4 flex items-start space-x-3.5">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-purple-500 text-white flex items-center justify-center font-extrabold shadow-md shadow-purple-300 shrink-0">2</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">2. Matching & Conflict Shield</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">Matches by Tax ID, Email, Phone, and Name+Zip. Conflicting split identities are safely quarantined.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-gradient-to-br from-emerald-50/70 to-white border border-emerald-100/90 rounded-xl p-4 flex items-start space-x-3.5">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-extrabold shadow-md shadow-emerald-300 shrink-0">3</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">3. Master ID & SCD-2 Audit Trail</h4>
+                        <p class="text-slate-600 text-xs leading-relaxed">Links every record to one unified master <strong>Canonical ID</strong> with complete historical lineage (SCD Type 2).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric KPI 3D Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI 1 -->
+            <div class="card-3d rounded-2xl p-5 border-l-4 border-indigo-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Canonical Master Profiles</p>
+                    <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-fingerprint text-base"></i>
+                    </div>
+                </div>
+                <h3 id="stat-canonical-count" class="text-3xl font-black text-slate-800 mt-2">-</h3>
+                <p class="text-[11px] text-slate-500 mt-1 flex items-center space-x-1.5 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    <span>Consolidated golden master entities</span>
+                </p>
+            </div>
+
+            <!-- KPI 2 -->
+            <div class="card-3d rounded-2xl p-5 border-l-4 border-emerald-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Serving Mappings</p>
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-diagram-project text-base"></i>
+                    </div>
+                </div>
+                <h3 id="stat-active-count" class="text-3xl font-black text-slate-800 mt-2">-</h3>
+                <p class="text-[11px] text-slate-500 mt-1 flex items-center space-x-1.5 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    <span>Source IDs linked to canonical masters</span>
+                </p>
+            </div>
+
+            <!-- KPI 3 -->
+            <div class="card-3d rounded-2xl p-5 border-l-4 border-rose-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quarantined Conflicts</p>
+                    <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-shield-virus text-base"></i>
+                    </div>
+                </div>
+                <h3 id="stat-quarantine-count" class="text-3xl font-black text-rose-600 mt-2">-</h3>
+                <p class="text-[11px] text-slate-500 mt-1 flex items-center space-x-1.5 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                    <span>Isolated to prevent data corruption</span>
+                </p>
+            </div>
+
+            <!-- KPI 4 -->
+            <div class="card-3d rounded-2xl p-5 border-l-4 border-amber-500">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">SCD-2 History Intervals</p>
+                    <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-clock-rotate-left text-base"></i>
+                    </div>
+                </div>
+                <h3 id="stat-history-count" class="text-3xl font-black text-slate-800 mt-2">-</h3>
+                <p class="text-[11px] text-slate-500 mt-1 flex items-center space-x-1.5 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                    <span>Immutable state transition rows</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Visual Analytics Row (Colorful Charts + Detailed Legends) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Donut Chart: Resolution Match Mechanisms -->
+            <div class="card-3d rounded-2xl p-5 border border-indigo-100">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-600 text-sm"></i>
+                        <span>Resolution Match Mechanisms</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-slate-500">Matching Rule Hierarchy</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    <div class="sm:col-span-6 h-52 relative flex items-center justify-center">
+                        <canvas id="matchChart"></canvas>
+                    </div>
+                    <!-- Detailed Legend with explicit Names, Counts and Percentages -->
+                    <div class="sm:col-span-6 space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1" id="match-legend-list">
+                        <div class="text-slate-400 text-center py-4">Loading match breakdown...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Quarantined Exceptions Breakdown -->
+            <div class="card-3d rounded-2xl p-5 border border-indigo-100">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500 text-sm"></i>
+                        <span>Quarantined Anomaly Reason Breakdown</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-slate-500">Exception Triage</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                    <div class="sm:col-span-6 h-52 relative flex items-center justify-center">
+                        <canvas id="unresolvedChart"></canvas>
+                    </div>
+                    <!-- Detailed Legend with explicit Names & Counts -->
+                    <div class="sm:col-span-6 space-y-1.5 text-xs max-h-52 overflow-y-auto pr-1" id="quarantine-legend-list">
+                        <div class="text-slate-400 text-center py-4">Loading quarantine reasons...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workspace Tabs -->
+        <div class="card-3d rounded-2xl shadow-sm overflow-hidden">
+            <!-- Tab Headers -->
+            <div class="border-b border-slate-200 bg-slate-50/70 px-4 flex flex-wrap gap-2 sm:gap-6">
+                <button onclick="switchTab('tab-mappings')" id="btn-tab-mappings" class="py-3.5 text-xs sm:text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Active Mappings</span>
+                </button>
+                <button onclick="switchTab('tab-entities')" id="btn-tab-entities" class="py-3.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>Canonical Master Registry</span>
+                </button>
+                <button onclick="switchTab('tab-quarantine')" id="btn-tab-quarantine" class="py-3.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-rose-600 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                    <span>Quarantine & Conflicts Center</span>
+                </button>
+                <button onclick="switchTab('tab-upload')" id="btn-tab-upload" class="py-3.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-indigo-600 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-file-arrow-up text-indigo-500"></i>
+                    <span>Upload Multiple Datasets</span>
+                </button>
+                <button onclick="switchTab('tab-playground')" id="btn-tab-playground" class="py-3.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-purple-600 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-flask-vial text-purple-500"></i>
+                    <span>Live Matcher Playground</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: Active Mappings -->
+            <div id="tab-mappings" class="p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="w-full sm:w-96 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="filter-search" oninput="loadMappings()" placeholder="Search source ID, canonical ID, name, email..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <select id="filter-source" onchange="loadMappings()" class="text-xs bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-indigo-500">
+                            <option value="">All Source Systems</option>
+                        </select>
+                        <select id="filter-match-type" onchange="loadMappings()" class="text-xs bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-700 focus:ring-2 focus:ring-indigo-500">
+                            <option value="">All Match Types</option>
+                            <option value="EXACT_SOURCE_ID">Exact Source ID Match</option>
+                            <option value="EXACT_NATIONAL_ID">National ID / SSN Match</option>
+                            <option value="RULE_EMAIL">Email Match</option>
+                            <option value="RULE_PHONE">Phone Match</option>
+                            <option value="RULE_COMPOSITE">Composite Name+Zip Match</option>
+                            <option value="NEW_CANONICAL">New Master Created</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Source Origin</th>
+                                <th class="px-4 py-3">Source Record ID</th>
+                                <th class="px-4 py-3">Canonical Master ID</th>
+                                <th class="px-4 py-3">Resolved Customer Profile</th>
+                                <th class="px-4 py-3">Match Mechanism</th>
+                                <th class="px-4 py-3">Confidence</th>
+                                <th class="px-4 py-3 text-right">Lineage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappings-table-body" class="divide-y divide-slate-100 bg-white">
+                            <tr><td colspan="7" class="text-center py-8 text-slate-400">Loading active mappings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 2: Canonical Master Registry -->
+            <div id="tab-entities" class="p-5 space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="relative flex-1 w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="filter-entities-search" oninput="onEntitiesSearchInput()" placeholder="Search canonical ID, master name, national tax ID / SKU / model no..." class="w-full text-xs pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        <button id="btn-clear-entities-search" onclick="clearEntitiesSearch()" title="Clear Search" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                            <i class="fa-solid fa-circle-xmark text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
+                        <span id="entities-count-badge" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border border-indigo-100">Showing master entities</span>
+                        <button id="btn-refresh-entities" onclick="refreshEntities()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-xl transition shadow-sm font-bold" title="Refresh Canonical Entities">
+                            <i id="btn-refresh-entities-icon" class="fa-solid fa-arrows-rotate text-xs"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+                    <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Canonical Master ID</th>
+                                <th class="px-4 py-3">Master Entity Name / Title</th>
+                                <th class="px-4 py-3">Primary Email</th>
+                                <th class="px-4 py-3">Primary Phone</th>
+                                <th class="px-4 py-3">National ID / SKU</th>
+                                <th class="px-4 py-3">Linked Source Systems</th>
+                                <th class="px-4 py-3 text-right">Linked Records</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entities-table-body" class="divide-y divide-slate-100 bg-white">
+                            <tr><td colspan="7" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading master entities...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: Quarantine & Conflicts Center -->
+            <div id="tab-quarantine" class="p-5 space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs text-slate-600 font-medium">
+                        Isolated anomalous records flagged for 1-to-many split conflicts, ambiguous rule matches, or corrupt schema values.
+                    </p>
+                    <select id="filter-quarantine-status" onchange="loadUnresolved()" class="text-xs bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-slate-700">
+                        <option value="">All Statuses</option>
+                        <option value="OPEN" selected>OPEN (Unresolved)</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                        <option value="IGNORED">IGNORED</option>
+                    </select>
+                </div>
+                <div id="quarantine-cards-container" class="space-y-3">
+                    <div class="text-center py-8 text-slate-400">Loading quarantined exceptions...</div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Upload Multiple Datasets (Inline Workspace) -->
+            <div id="tab-upload" class="p-6 space-y-6 hidden">
+                <div class="max-w-3xl mx-auto space-y-5">
+                    <div class="text-center space-y-1">
+                        <h3 class="text-base font-bold text-slate-800">Upload Multiple Datasets</h3>
+                        <p class="text-xs text-slate-500">Select or drag & drop multiple CSV or JSON files (e.g. Table A, Table B). The engine cross-links records to golden profiles.</p>
+                    </div>
+
+                    <!-- Multi-File Drag & Drop Area -->
+                    <div id="tab-drop-zone" class="drop-zone-3d rounded-2xl p-8 text-center cursor-pointer">
+                        <input type="file" id="tab-file-input" multiple accept=".csv,.json,.jsonl" class="hidden" onchange="handleMultipleFiles(this.files)">
+                        <div class="space-y-2">
+                            <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl shadow-md shadow-indigo-100 animate-float">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                            <div class="text-xs font-bold text-slate-700">
+                                <span class="text-indigo-600 underline">Click to browse multiple files</span> or drag & drop here
+                            </div>
+                            <p class="text-[11px] text-slate-500">Supports selecting multiple CSV or JSON tables simultaneously</p>
+                        </div>
+                    </div>
+
+                    <!-- Selected Files Queue Display -->
+                    <div id="tab-selected-files-list" class="hidden space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-600 font-bold px-1">
+                            <span>Selected Datasets to Process (<span id="tab-files-count">0</span>)</span>
+                            <button onclick="clearFiles()" class="text-rose-500 hover:text-rose-700 text-[11px] font-bold">Clear All</button>
+                        </div>
+                        <div id="tab-files-container" class="space-y-2 max-h-56 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center space-x-2 bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-900">
+                            <input type="checkbox" id="tab-clear-existing" checked class="w-4 h-4 text-indigo-600 rounded cursor-pointer">
+                            <label for="tab-clear-existing" class="font-bold cursor-pointer">Show ONLY uploaded datasets (replaces any previous datasets)</label>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <button onclick="loadBenchmarkDatasets()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-bolt text-indigo-500"></i>
+                                <span>Try Sample Multi-Dataset (Table A & B)</span>
+                            </button>
+                            <button onclick="submitMultipleUploads()" id="tab-btn-submit-upload" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-indigo-500/25 transition disabled:opacity-50">
+                                <i class="fa-solid fa-play mr-1.5"></i> Process & Resolve All Datasets
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Output Box -->
+                    <div id="tab-upload-status-box" class="hidden bg-white border border-slate-200 rounded-xl p-4 text-xs space-y-3 shadow-md animate-modal">
+                        <div class="flex items-center justify-between text-slate-800 font-bold">
+                            <span class="flex items-center space-x-2">
+                                <i class="fa-solid fa-list-check text-indigo-600"></i>
+                                <span>Multi-Dataset Ingestion Breakdown</span>
+                            </span>
+                            <span id="tab-upload-badge" class="px-2.5 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700 font-bold">PROCESSING</span>
+                        </div>
+                        <div id="tab-upload-summary-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                        <div id="tab-upload-files-breakdown" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Live Matcher Playground -->
+            <div id="tab-playground" class="p-5 space-y-6 hidden">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-xs text-indigo-900 flex items-start space-x-3">
+                    <i class="fa-solid fa-flask-vial text-indigo-600 mt-0.5 text-sm"></i>
+                    <div>
+                        <span class="font-bold">Interactive Resolution Sandbox:</span>
+                        Test single records in real time. Simulate incoming payloads, evaluate rule precedence, test 1-to-many split-identity conflicts, or watch novel canonical profiles provision.
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Form Input -->
+                    <div class="space-y-3 text-xs bg-slate-50/70 p-5 rounded-2xl border border-slate-200">
+                        <h4 class="font-bold text-slate-800 text-sm mb-2 flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-indigo-600"></i>
+                            <span>Payload Attributes</span>
+                        </h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Source System *</label>
+                                <input id="play-system" type="text" value="table_input" placeholder="e.g. tableA" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Source Record ID *</label>
+                                <input id="play-record-id" type="text" value="REC_TEST_01" placeholder="e.g. 101" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Entity / Product Name</label>
+                                <input id="play-first-name" type="text" value="Sony Bravia 4K TV" placeholder="Entity name or title" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Brand / Suffix</label>
+                                <input id="play-last-name" type="text" value="Electronics" placeholder="Brand or category" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="font-bold block text-slate-600 mb-1">Email Address</label>
+                            <input id="play-email" type="text" value="support@sony.com" placeholder="name@domain.com" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Phone Number</label>
+                                <input id="play-phone" type="text" value="+1 (800) 555-0199" placeholder="+1-800-xxx-xxxx" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">National Tax ID / Model No</label>
+                                <input id="play-ssn" type="text" value="DCS1100" placeholder="e.g. DCS1100 or SKU" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Postal Code / Category</label>
+                                <input id="play-zip" type="text" value="98052" placeholder="e.g. 98052 or Electronics" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                            <div>
+                                <label class="font-bold block text-slate-600 mb-1">Country</label>
+                                <input id="play-country" type="text" value="US" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800">
+                            </div>
+                        </div>
+                        <button onclick="testIngestPlayground()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 rounded-xl shadow-md transition-all mt-2">
+                            <i class="fa-solid fa-bolt mr-1"></i> Run Resolution Engine
+                        </button>
+                    </div>
+
+                    <!-- Output Console -->
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col font-mono text-xs shadow-sm">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+                            <span class="text-slate-700 font-sans font-bold flex items-center space-x-1.5">
+                                <i class="fa-solid fa-terminal text-indigo-600"></i>
+                                <span>Engine Decision Log</span>
+                            </span>
+                            <span id="play-status-pill" class="text-[10px] font-bold px-2.5 py-0.5 rounded bg-slate-100 text-slate-600">READY</span>
+                        </div>
+                        <pre id="play-output" class="flex-1 overflow-auto text-indigo-900 text-xs p-3 leading-relaxed bg-slate-50 rounded-xl border border-slate-200 max-h-96">// Click 'Run Resolution Engine' to test matching...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3D Animated Upload Modal (Dedicated Dialog) -->
+    <div id="upload-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-3d bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-5 animate-modal border border-indigo-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800">Upload Multiple Datasets</h3>
+                        <p class="text-xs text-slate-500">Cross-resolve customer tables from multiple source systems</p>
+                    </div>
+                </div>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Modal Drag & Drop Zone -->
+            <div id="modal-drop-zone" class="drop-zone-3d rounded-2xl p-6 text-center cursor-pointer">
+                <input type="file" id="modal-file-input" multiple accept=".csv,.json,.jsonl" class="hidden" onchange="handleMultipleFiles(this.files)">
+                <div class="space-y-2">
+                    <div class="w-12 h-12 mx-auto rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl shadow-sm">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <div class="text-xs font-bold text-slate-700">
+                        <span class="text-indigo-600 underline">Click to choose multiple files</span> or drag & drop here
+                    </div>
+                    <p class="text-[11px] text-slate-400">Select CRM, Billing, Store, or Support datasets (.csv, .json)</p>
+                </div>
+            </div>
+
+            <!-- Staged File Queue in Modal -->
+            <div id="modal-files-list" class="hidden space-y-2">
+                <div class="flex items-center justify-between text-xs text-slate-600 font-bold px-1">
+                    <span>Staged Files for Ingestion (<span id="modal-files-count">0</span>)</span>
+                    <button onclick="clearFiles()" class="text-rose-500 hover:text-rose-700 text-[11px] font-bold">Clear All</button>
+                </div>
+                <div id="modal-files-container" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <!-- Modal Clear Option -->
+            <div class="flex items-center space-x-2 bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-900">
+                <input type="checkbox" id="modal-clear-existing" checked class="w-4 h-4 text-indigo-600 rounded cursor-pointer">
+                <label for="modal-clear-existing" class="font-bold cursor-pointer">Show ONLY uploaded datasets (replaces any previous datasets)</label>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <button onclick="loadBenchmarkDatasets()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-sparkles text-indigo-500"></i>
+                    <span>Try Sample (Table A + B)</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="closeUploadModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 px-4 rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button onclick="submitMultipleUploads()" id="modal-btn-submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold py-2 px-5 rounded-xl shadow-md transition disabled:opacity-50">
+                        <i class="fa-solid fa-play mr-1"></i> Resolve All Files
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCD-2 History Lineage Modal -->
+    <div id="history-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-3d bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-modal border border-indigo-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">SCD Type 2 Mapping Audit Trail</h3>
+                        <p id="modal-subtitle" class="text-xs text-indigo-600 font-mono font-semibold"></p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+            </div>
+            <div id="modal-timeline" class="space-y-3 max-h-96 overflow-y-auto p-1"></div>
+            <div class="text-right pt-2 border-t border-slate-100">
+                <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 px-4 rounded-xl">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Scripting -->
+    <script>
+        let matchChartInstance = null;
+        let unresolvedChartInstance = null;
+        let fileQueue = [];
+
+        // Human-Readable Rule Mapping Labels
+        const MATCH_RULE_LABELS = {
+            'EXACT_SOURCE_ID': 'Exact Source ID Match',
+            'EXACT_NATIONAL_ID': 'National ID / SSN Match',
+            'RULE_EMAIL': 'Verified Email Match',
+            'RULE_PHONE': 'E.164 Phone Match',
+            'RULE_COMPOSITE': 'Composite Name + Zip Match',
+            'NEW_CANONICAL': 'New Golden Identity Created'
+        };
+
+        const MATCH_RULE_COLORS = {
+            'EXACT_SOURCE_ID': '#10b981',
+            'EXACT_NATIONAL_ID': '#06b6d4',
+            'RULE_EMAIL': '#6366f1',
+            'RULE_PHONE': '#8b5cf6',
+            'RULE_COMPOSITE': '#f59e0b',
+            'NEW_CANONICAL': '#ec4899'
+        };
+
+        const QUARANTINE_LABELS = {
+            'CONFLICT_ONE_TO_MANY_CANONICAL': '1-to-Many Split Conflict',
+            'CONFLICT_AMBIGUOUS_RULE_MATCH': 'Ambiguous Multi-Candidate Match',
+            'CONFLICT_SOURCE_KEY_COLLISION': 'Intra-Batch Key Collision',
+            'MISSING_REQUIRED_KEY': 'Missing Required Primary Key',
+            'UNRESOLVED_INSUFFICIENT_ATTRIBUTES': 'Insufficient Match Attributes',
+            'SCHEMA_VALIDATION_ERROR': 'Malformed Schema Payload',
+            'UNRESOLVED_AUTO_CREATE_DISABLED': 'Auto-Create Disabled by Policy'
+        };
+
+        function showToast(msg, type = 'success') {
+            const b = document.getElementById('toast-banner');
+            const m = document.getElementById('toast-msg');
+            const i = document.getElementById('toast-icon');
+            let colorClasses = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+            let iconClass = 'fa-solid fa-circle-check text-emerald-600 text-sm';
+            
+            if (type === 'error') {
+                colorClasses = 'bg-rose-50 text-rose-800 border-rose-200';
+                iconClass = 'fa-solid fa-triangle-exclamation text-rose-600 text-sm';
+            } else if (type === 'info') {
+                colorClasses = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+                iconClass = 'fa-solid fa-circle-info text-indigo-600 text-sm';
+            }
+            
+            b.className = `rounded-xl p-3.5 text-xs flex items-center justify-between shadow-xl border animate-modal ${colorClasses}`;
+            i.className = iconClass;
+            m.innerText = msg;
+            b.classList.remove('hidden');
+            setTimeout(() => b.classList.add('hidden'), 5000);
+        }
+
+        function switchTab(tabId) {
+            ['tab-mappings', 'tab-entities', 'tab-quarantine', 'tab-upload', 'tab-playground'].forEach(t => {
+                const el = document.getElementById(t);
+                const btn = document.getElementById(`btn-${t}`);
+                if (el) el.classList.add('hidden');
+                if (btn) btn.className = 'py-3.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition';
+            });
+            const targetEl = document.getElementById(tabId);
+            const targetBtn = document.getElementById(`btn-${tabId}`);
+            if (targetEl) targetEl.classList.remove('hidden');
+            if (targetBtn) targetBtn.className = 'py-3.5 text-xs sm:text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 transition';
+
+            if (tabId === 'tab-entities') {
+                loadEntities();
+            } else if (tabId === 'tab-mappings') {
+                loadMappings();
+            } else if (tabId === 'tab-quarantine') {
+                loadUnresolved();
+            }
+        }
+
+        function openUploadModal() {
+            document.getElementById('upload-modal').classList.remove('hidden');
+            renderFileQueue();
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        }
+
+        // Setup Drag & Drop Handlers for both Dropzones
+        function setupDropZone(dropZoneId, fileInputId) {
+            const zone = document.getElementById(dropZoneId);
+            const input = document.getElementById(fileInputId);
+            if (!zone || !input) return;
+
+            zone.addEventListener('click', () => input.click());
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            ['dragleave', 'dragend'].forEach(type => {
+                zone.addEventListener(type, () => zone.classList.remove('dragover'));
+            });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleMultipleFiles(e.dataTransfer.files);
+                }
+            });
+        }
+
+        setupDropZone('modal-drop-zone', 'modal-file-input');
+        setupDropZone('tab-drop-zone', 'tab-file-input');
+
+        function handleMultipleFiles(files) {
+            if (!files || !files.length) return;
+            for (let i = 0; i < files.length; i++) {
+                const f = files[i];
+                if (!fileQueue.some(item => item.name === f.name && item.size === f.size)) {
+                    fileQueue.push(f);
+                }
+            }
+            renderFileQueue();
+        }
+
+        function renderFileQueue() {
+            const count = fileQueue.length;
+
+            // Update Tab display
+            const tabList = document.getElementById('tab-selected-files-list');
+            const tabContainer = document.getElementById('tab-files-container');
+            const tabCount = document.getElementById('tab-files-count');
+            if (tabCount) tabCount.innerText = count;
+
+            // Update Modal display
+            const modalList = document.getElementById('modal-files-list');
+            const modalContainer = document.getElementById('modal-files-container');
+            const modalCount = document.getElementById('modal-files-count');
+            if (modalCount) modalCount.innerText = count;
+
+            if (!count) {
+                if (tabList) tabList.classList.add('hidden');
+                if (modalList) modalList.classList.add('hidden');
+                return;
+            }
+
+            if (tabList) tabList.classList.remove('hidden');
+            if (modalList) modalList.classList.remove('hidden');
+
+            const renderHTML = fileQueue.map((f, idx) => `
+                <div class="flex items-center justify-between bg-indigo-50/60 border border-indigo-100 p-2.5 rounded-xl text-xs">
+                    <div class="flex items-center space-x-2.5 overflow-hidden">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                            ${f.name.endsWith('.json') || f.name.endsWith('.jsonl') ? 'JSON' : 'CSV'}
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 truncate block">${f.name}</span>
+                            <span class="text-slate-500 font-mono text-[10px]">${(f.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                    </div>
+                    <button onclick="removeFileFromQueue(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Remove dataset">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            if (tabContainer) tabContainer.innerHTML = renderHTML;
+            if (modalContainer) modalContainer.innerHTML = renderHTML;
+        }
+
+        function removeFileFromQueue(idx) {
+            fileQueue.splice(idx, 1);
+            renderFileQueue();
+        }
+
+        function clearFiles() {
+            fileQueue = [];
+            const mInput = document.getElementById('modal-file-input');
+            const tInput = document.getElementById('tab-file-input');
+            if (mInput) mInput.value = '';
+            if (tInput) tInput.value = '';
+            renderFileQueue();
+        }
+
+        // Quick Loader for Demo Tables (Table A & Table B)
+        async function loadBenchmarkDatasets() {
+            try {
+                showToast('Loading pre-built multi-dataset sample (Table A & Table B)...');
+                const [respA, respB] = await Promise.all([
+                    fetch('/benchmark-file/table_a_crm_customers.csv'),
+                    fetch('/benchmark-file/table_b_billing_accounts.csv')
+                ]);
+
+                if (!respA.ok || !respB.ok) {
+                    // Fallback to genuine data endpoint
+                    await loadGenuineData();
+                    closeUploadModal();
+                    return;
+                }
+
+                const blobA = await respA.blob();
+                const blobB = await respB.blob();
+
+                const fileA = new File([blobA], 'table_a_crm_customers.csv', { type: 'text/csv' });
+                const fileB = new File([blobB], 'table_b_billing_accounts.csv', { type: 'text/csv' });
+
+                handleMultipleFiles([fileA, fileB]);
+                showToast('Staged Table A (CRM) and Table B (Billing)! Click "Resolve All Files" to process.');
+            } catch (e) {
+                // If direct route unavailable, run genuine loader
+                await loadGenuineData();
+                closeUploadModal();
+            }
+        }
+
+        async function submitMultipleUploads() {
+            if (!fileQueue.length) {
+                showToast('Please select at least one CSV or JSON file to upload', 'error');
+                return;
+            }
+
+            const modalBtn = document.getElementById('modal-btn-submit');
+            const tabBtn = document.getElementById('tab-btn-submit-upload');
+            const statusBox = document.getElementById('tab-upload-status-box');
+            const badge = document.getElementById('tab-upload-badge');
+            const summaryCards = document.getElementById('tab-upload-summary-cards');
+            const breakdown = document.getElementById('tab-upload-files-breakdown');
+
+            if (modalBtn) {
+                modalBtn.disabled = true;
+                modalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Ingesting...';
+            }
+            if (tabBtn) {
+                tabBtn.disabled = true;
+                tabBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Processing...';
+            }
+
+            if (statusBox) statusBox.classList.remove('hidden');
+            if (badge) {
+                badge.innerText = 'PROCESSING...';
+                badge.className = 'px-2.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800 font-bold';
+            }
+            if (summaryCards) summaryCards.innerHTML = '';
+            if (breakdown) breakdown.innerHTML = `<p class="text-slate-500 text-xs">Uploading and cross-resolving ${fileQueue.length} datasets through matching engine...</p>`;
+
+            const formData = new FormData();
+            fileQueue.forEach(f => {
+                formData.append('files', f);
+            });
+            const clearExisting = document.getElementById('modal-clear-existing')?.checked ?? document.getElementById('tab-clear-existing')?.checked ?? true;
+            formData.append('clear_existing', clearExisting ? 'true' : 'false');
+
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    if (badge) {
+                        badge.innerText = 'SUCCESS';
+                        badge.className = 'px-2.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold';
+                    }
+
+                    const s = json.summary;
+                    if (summaryCards) {
+                        summaryCards.innerHTML = `
+                            <div class="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-100">
+                                <span class="text-[10px] text-slate-500 block uppercase font-bold">Total Ingested</span>
+                                <span class="text-base font-extrabold text-slate-800">${s.total_input_records.toLocaleString()}</span>
+                            </div>
+                            <div class="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100">
+                                <span class="text-[10px] text-slate-500 block uppercase font-bold">Matched Existing</span>
+                                <span class="text-base font-extrabold text-emerald-700">${s.total_mapped_existing.toLocaleString()}</span>
+                            </div>
+                            <div class="bg-purple-50/70 p-2.5 rounded-xl border border-purple-100">
+                                <span class="text-[10px] text-slate-500 block uppercase font-bold">Novel Masters</span>
+                                <span class="text-base font-extrabold text-purple-700">${s.total_created_canonical.toLocaleString()}</span>
+                            </div>
+                            <div class="bg-rose-50/70 p-2.5 rounded-xl border border-rose-100">
+                                <span class="text-[10px] text-slate-500 block uppercase font-bold">Quarantined</span>
+                                <span class="text-base font-extrabold ${s.total_unresolved_conflicts > 0 ? 'text-rose-700' : 'text-slate-600'}">${s.total_unresolved_conflicts.toLocaleString()}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (breakdown) {
+                        breakdown.innerHTML = '<div class="text-[11px] font-bold text-slate-700 pt-1">Per-Dataset Results:</div>';
+                        json.file_details.forEach(fd => {
+                            const row = document.createElement('div');
+                            row.className = 'bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-[11px] flex items-center justify-between';
+                            if (fd.status === 'success') {
+                                row.innerHTML = `
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fa-solid fa-check text-emerald-600 font-bold"></i>
+                                        <span class="font-bold text-slate-800">${fd.filename}</span>
+                                        <span class="text-slate-500 font-mono text-[10px]">(${fd.source_system})</span>
+                                    </div>
+                                    <div class="space-x-3 text-slate-600">
+                                        <span>Total: <strong class="text-slate-900">${fd.records_count}</strong></span>
+                                        <span>Linked: <strong class="text-emerald-700 font-bold">${fd.mapped_existing}</strong></span>
+                                        <span>Novel: <strong class="text-purple-700 font-bold">${fd.created_canonical}</strong></span>
+                                        <span>Quarantine: <strong class="${fd.unresolved_conflicts > 0 ? 'text-rose-700' : 'text-slate-600'}">${fd.unresolved_conflicts}</strong></span>
+                                    </div>
+                                `;
+                            } else {
+                                row.innerHTML = `
+                                    <div class="flex items-center space-x-2 text-rose-600">
+                                        <i class="fa-solid fa-circle-xmark"></i>
+                                        <span>${fd.filename}: ${fd.error}</span>
+                                    </div>
+                                `;
+                            }
+                            breakdown.appendChild(row);
+                        });
+                    }
+
+                    showToast(json.message);
+                    closeUploadModal();
+                    clearFiles();
+                    switchTab('tab-mappings');
+                    await refreshAll();
+                } else {
+                    if (badge) {
+                        badge.innerText = 'FAILED';
+                        badge.className = 'px-2.5 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800 font-bold';
+                    }
+                    if (breakdown) breakdown.innerHTML = `<p class="text-rose-600 font-semibold">${json.message || 'Error occurred.'}</p>`;
+                    showToast(json.message, 'error');
+                }
+            } catch (err) {
+                if (badge) {
+                    badge.innerText = 'ERROR';
+                    badge.className = 'px-2.5 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800 font-bold';
+                }
+                if (breakdown) breakdown.innerHTML = `<p class="text-rose-600">${String(err)}</p>`;
+                showToast(String(err), 'error');
+            } finally {
+                if (modalBtn) {
+                    modalBtn.disabled = false;
+                    modalBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resolve All Files';
+                }
+                if (tabBtn) {
+                    tabBtn.disabled = false;
+                    tabBtn.innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Process & Resolve All Datasets';
+                }
+            }
+        }
+
+        async function resetDatabasePrompt() {
+            if (!confirm('Are you sure you want to reset the database? This will clear all stored entities and mappings to a clean state.')) return;
+            try {
+                const res = await fetch('/api/reset-database', { method: 'POST' });
+                const json = await res.json();
+                showToast(json.message);
+                await refreshAll();
+            } catch (err) {
+                showToast(String(err), 'error');
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch('/api/dashboard');
+                const json = await res.json();
+                if (json.status !== 'success') return;
+
+                const s = json.summary;
+                document.getElementById('stat-canonical-count').innerText = s.total_canonical_entities.toLocaleString();
+                document.getElementById('stat-active-count').innerText = s.total_active_mappings.toLocaleString();
+                document.getElementById('stat-quarantine-count').innerText = s.total_unresolved_records.toLocaleString();
+                document.getElementById('stat-history-count').innerText = s.total_history_records.toLocaleString();
+
+                // 1. Resolution Mechanisms Donut Chart with Explicit Section Names
+                const rawMLabels = Object.keys(s.match_type_distribution || {});
+                const mData = Object.values(s.match_type_distribution || {});
+                const totalM = mData.reduce((a, b) => a + b, 0) || 1;
+
+                const humanMLabels = rawMLabels.map(k => MATCH_RULE_LABELS[k] || k);
+                const chartColors = rawMLabels.map(k => MATCH_RULE_COLORS[k] || '#6366f1');
+
+                if (matchChartInstance) matchChartInstance.destroy();
+                const ctxM = document.getElementById('matchChart').getContext('2d');
+                matchChartInstance = new Chart(ctxM, {
+                    type: 'doughnut',
+                    data: {
+                        labels: humanMLabels.length ? humanMLabels : ['No Data'],
+                        datasets: [{
+                            data: mData.length ? mData : [1],
+                            backgroundColor: chartColors.length ? chartColors : ['#cbd5e1'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.raw || 0;
+                                        const pct = ((val / totalM) * 100).toFixed(1);
+                                        return ` ${context.label}: ${val} records (${pct}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Render Detailed Legend List for Donut Chart
+                const legendList = document.getElementById('match-legend-list');
+                if (rawMLabels.length === 0) {
+                    legendList.innerHTML = `
+                        <div class="text-center py-6 space-y-1">
+                            <span class="text-xs font-bold text-slate-700 block">Awaiting Dataset Ingestion</span>
+                            <span class="text-[11px] text-slate-400 block">Upload your files to view matching rule distribution.</span>
+                        </div>
+                    `;
+                } else {
+                    legendList.innerHTML = rawMLabels.map((key, i) => {
+                        const name = MATCH_RULE_LABELS[key] || key;
+                        const count = mData[i];
+                        const pct = ((count / totalM) * 100).toFixed(1);
+                        const col = MATCH_RULE_COLORS[key] || '#6366f1';
+                        return `
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100 transition">
+                                <div class="flex items-center space-x-2 truncate">
+                                    <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${col}"></span>
+                                    <span class="font-bold text-slate-800 truncate">${name}</span>
+                                </div>
+                                <div class="text-right shrink-0 pl-2">
+                                    <span class="font-bold text-slate-900">${count.toLocaleString()}</span>
+                                    <span class="text-slate-400 text-[10px]">(${pct}%)</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // 2. Unresolved Anomaly Bar Chart with Human Names
+                const rawULabels = Object.keys(s.unresolved_distribution || {});
+                const uData = Object.values(s.unresolved_distribution || {});
+                const humanULabels = rawULabels.map(k => QUARANTINE_LABELS[k] || k);
+
+                if (unresolvedChartInstance) unresolvedChartInstance.destroy();
+                const ctxU = document.getElementById('unresolvedChart').getContext('2d');
+                unresolvedChartInstance = new Chart(ctxU, {
+                    type: 'bar',
+                    data: {
+                        labels: humanULabels.length ? humanULabels : ['Clean'],
+                        datasets: [{
+                            label: 'Quarantined Count',
+                            data: uData.length ? uData : [0],
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#f1f5f9' },
+                                ticks: { color: '#64748b', precision: 0 }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { display: false } // Labels shown in list
+                            }
+                        }
+                    }
+                });
+
+                // Render Detailed Quarantine Legend List
+                const qLegendList = document.getElementById('quarantine-legend-list');
+                if (rawULabels.length === 0) {
+                    qLegendList.innerHTML = '<div class="text-emerald-700 font-bold text-center py-4"><i class="fa-solid fa-check-circle mr-1"></i> Zero Quarantined Records!</div>';
+                } else {
+                    qLegendList.innerHTML = rawULabels.map((key, i) => {
+                        const name = QUARANTINE_LABELS[key] || key;
+                        const count = uData[i];
+                        return `
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-rose-50/60 border border-rose-100 hover:bg-rose-100/60 transition">
+                                <div class="flex items-center space-x-2 truncate">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                                    <span class="font-bold text-rose-900 truncate">${name}</span>
+                                </div>
+                                <span class="font-black text-rose-700 pl-2 shrink-0">${count.toLocaleString()}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadMappings() {
+            const search = document.getElementById('filter-search').value;
+            const src = document.getElementById('filter-source').value;
+            const match = document.getElementById('filter-match-type').value;
+
+            const res = await fetch(`/api/mappings?search=${encodeURIComponent(search)}&source_system=${encodeURIComponent(src)}&match_type=${encodeURIComponent(match)}`);
+            const json = await res.json();
+            const tbody = document.getElementById('mappings-table-body');
+            tbody.innerHTML = '';
+
+            if (!json.data.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-12">
+                            <div class="max-w-md mx-auto space-y-3">
+                                <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shadow-sm">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800">No Datasets Uploaded Yet</h4>
+                                <p class="text-xs text-slate-500">Only the datasets you upload will appear here. No external demo records are loaded.</p>
+                                <button onclick="openUploadModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md transition">
+                                    <i class="fa-solid fa-plus mr-1"></i> Upload Your Datasets
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const sysSelect = document.getElementById('filter-source');
+            const currentSelected = sysSelect.value;
+            const systems = new Set();
+
+            json.data.forEach(r => {
+                systems.add(r.source_system);
+                let badgeClass = 'badge-rule';
+                if (r.match_type.startsWith('EXACT')) badgeClass = 'badge-exact';
+                else if (r.match_type === 'NEW_CANONICAL') badgeClass = 'badge-novel';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-indigo-50/40 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-2.5 font-bold text-slate-700">${r.source_system}</td>
+                    <td class="px-4 py-2.5 font-mono text-slate-600 font-medium">${r.source_record_id}</td>
+                    <td class="px-4 py-2.5 font-mono font-bold text-indigo-700">${r.canonical_id}</td>
+                    <td class="px-4 py-2.5 text-slate-800 font-medium">${r.primary_name || '-'} <span class="text-slate-500 text-xs block font-normal">${r.primary_email || ''}</span></td>
+                    <td class="px-4 py-2.5"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">${MATCH_RULE_LABELS[r.match_type] || r.match_type}</span></td>
+                    <td class="px-4 py-2.5 font-bold text-slate-700">${(r.confidence_score * 100).toFixed(0)}%</td>
+                    <td class="px-4 py-2.5 text-right">
+                        <button onclick="viewHistory('${r.source_system}', '${r.source_record_id}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs inline-flex items-center space-x-1">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span>History</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const systemList = json.systems || Array.from(systems);
+            if (sysSelect.options.length <= 1 || systemList.length !== sysSelect.options.length - 1) {
+                sysSelect.innerHTML = '<option value="">All Source Systems</option>';
+                systemList.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.innerText = s;
+                    if (s === currentSelected) opt.selected = true;
+                    sysSelect.appendChild(opt);
+                });
+            }
+        }
+
+        let debounceTimer;
+        function debounce(func, delay = 300) {
+            return function(...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        const debouncedLoadEntities = debounce(() => loadEntities(), 300);
+
+        function onEntitiesSearchInput() {
+            const searchInput = document.getElementById('filter-entities-search');
+            const clearBtn = document.getElementById('btn-clear-entities-search');
+            if (clearBtn) {
+                if (searchInput && searchInput.value.trim()) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            debouncedLoadEntities();
+        }
+
+        function clearEntitiesSearch() {
+            const searchInput = document.getElementById('filter-entities-search');
+            const clearBtn = document.getElementById('btn-clear-entities-search');
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.classList.add('hidden');
+            loadEntities();
+        }
+
+        async function refreshEntities() {
+            const btn = document.getElementById('btn-refresh-entities');
+            const icon = document.getElementById('btn-refresh-entities-icon');
+            const searchInput = document.getElementById('filter-entities-search');
+            const clearBtn = document.getElementById('btn-clear-entities-search');
+            
+            if (searchInput && searchInput.value) {
+                searchInput.value = '';
+                if (clearBtn) clearBtn.classList.add('hidden');
+            }
+
+            if (icon) icon.classList.add('fa-spin');
+            if (btn) btn.disabled = true;
+
+            try {
+                await loadEntities();
+                showToast('Canonical master entities refreshed successfully!', 'success');
+            } catch (err) {
+                showToast('Failed to refresh master entities: ' + err.message, 'error');
+            } finally {
+                setTimeout(() => {
+                    if (icon) icon.classList.remove('fa-spin');
+                    if (btn) btn.disabled = false;
+                }, 400);
+            }
+        }
+
+        async function loadEntities() {
+            const searchInput = document.getElementById('filter-entities-search');
+            const search = searchInput ? searchInput.value.trim() : '';
+            const tbody = document.getElementById('entities-table-body');
+            const badge = document.getElementById('entities-count-badge');
+
+            try {
+                const url = search ? `/api/entities?search=${encodeURIComponent(search)}` : '/api/entities';
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                
+                if (badge) {
+                    badge.innerText = `Showing ${json.count || json.data.length} master entities`;
+                }
+
+                tbody.innerHTML = '';
+
+                if (!json.data || !json.data.length) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-12">
+                                <div class="max-w-md mx-auto space-y-2">
+                                    <div class="w-12 h-12 mx-auto rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shadow-sm">
+                                        <i class="fa-solid fa-id-card"></i>
+                                    </div>
+                                    <h4 class="text-sm font-bold text-slate-800">${search ? 'No Matching Entities Found' : 'No Canonical Master Entities Yet'}</h4>
+                                    <p class="text-xs text-slate-500">${search ? 'Try adjusting your search query.' : 'Upload your datasets to automatically extract and consolidate golden canonical identities.'}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                json.data.forEach(e => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-indigo-50/40 transition';
+                    const systemsHtml = (e.linked_systems || '')
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean)
+                        .map(s => `<span class="bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full mr-1 text-[11px]">${s}</span>`)
+                        .join('');
+
+                    tr.innerHTML = `
+                        <td class="px-4 py-2.5 font-mono font-bold text-indigo-700">${e.canonical_id}</td>
+                        <td class="px-4 py-2.5 font-bold text-slate-800">${e.primary_name || '-'}</td>
+                        <td class="px-4 py-2.5 text-slate-600 font-mono">${e.primary_email || '-'}</td>
+                        <td class="px-4 py-2.5 text-slate-600 font-mono">${e.primary_phone || '-'}</td>
+                        <td class="px-4 py-2.5 text-slate-600 font-mono">${e.national_id || '-'}</td>
+                        <td class="px-4 py-2.5">${systemsHtml || '<span class="text-slate-400 italic">None</span>'}</td>
+                        <td class="px-4 py-2.5 text-right font-black text-slate-800">${e.linked_records_count || 1}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Failed to load canonical entities:', err);
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-8">
+                                <div class="inline-flex items-center space-x-2 text-rose-600 font-semibold text-xs">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>Unable to load master entities: ${err.message}.</span>
+                                    <button onclick="loadEntities()" class="underline font-bold hover:text-rose-800 ml-2">Retry</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+
+        async function loadUnresolved() {
+            const status = document.getElementById('filter-quarantine-status').value;
+            const res = await fetch(`/api/unresolved?status=${encodeURIComponent(status)}`);
+            const json = await res.json();
+            const container = document.getElementById('quarantine-cards-container');
+            container.innerHTML = '';
+
+            if (!json.data.length) {
+                container.innerHTML = '<div class="text-center py-8 text-emerald-700 font-bold"><i class="fa-solid fa-check-circle mr-1.5 text-lg"></i> Zero Quarantined Conflicts! All records cleanly resolved.</div>';
+                return;
+            }
+
+            json.data.forEach(item => {
+                let badgeClass = item.severity === 'CRITICAL' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-rose-100 text-rose-800 border-rose-200';
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border ${badgeClass}">${QUARANTINE_LABELS[item.reason_code] || item.reason_code}</span>
+                                <span class="text-xs text-slate-500 font-mono font-medium">Source: ${item.source_system || 'UNKNOWN'} &bull; Record ID: ${item.source_record_id || 'MISSING'}</span>
+                            </div>
+                            <p class="text-xs text-slate-700 font-semibold">${item.conflict_details?.message || item.conflict_details?.error || 'Validation anomaly or multi-candidate conflict flagged'}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${item.status === 'OPEN' ? `
+                                <button onclick="resolveQuarantine('${item.quarantine_id}', 'RESOLVED')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-xl transition">Mark Resolved</button>
+                                <button onclick="resolveQuarantine('${item.quarantine_id}', 'IGNORED')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-1 rounded-xl transition">Ignore</button>
+                            ` : `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${item.status}</span>`}
+                        </div>
+                    </div>
+                    <details class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 cursor-pointer">
+                        <summary class="font-bold text-indigo-700 select-none hover:text-indigo-900">View Raw Collision Payload & Diagnostics</summary>
+                        <pre class="mt-2 text-[11px] overflow-auto font-mono text-indigo-950 bg-white p-2.5 rounded-lg border border-slate-200 max-h-48">${JSON.stringify({ payload: item.payload_json, diagnostics: item.conflict_details }, null, 2)}</pre>
+                    </details>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function resolveQuarantine(id, newStatus) {
+            const res = await fetch('/api/resolve-quarantine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quarantine_id: id, status: newStatus })
+            });
+            const json = await res.json();
+            if (json.status === 'success') {
+                showToast(`Quarantine record marked as ${newStatus}`);
+                refreshAll();
+            }
+        }
+
+        async function viewHistory(src, id) {
+            const res = await fetch(`/api/history?source_system=${encodeURIComponent(src)}&source_record_id=${encodeURIComponent(id)}`);
+            const json = await res.json();
+            const modal = document.getElementById('history-modal');
+            const sub = document.getElementById('modal-subtitle');
+            const timeline = document.getElementById('modal-timeline');
+
+            sub.innerText = `${src} : ${id}`;
+            timeline.innerHTML = '';
+
+            json.data.forEach((h, idx) => {
+                const item = document.createElement('div');
+                item.className = 'border-l-2 border-indigo-500 pl-4 py-2 relative space-y-1';
+                item.innerHTML = `
+                    <div class="absolute -left-[5px] top-3 w-2.5 h-2.5 rounded-full ${h.is_current ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-slate-400'}"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono font-bold text-xs text-indigo-700">${h.canonical_id}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${h.is_current ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">${h.is_current ? 'CURRENT ACTIVE' : 'HISTORICAL INTERVAL'}</span>
+                    </div>
+                    <p class="text-xs text-slate-700 font-medium">Reason: <span class="font-bold text-slate-900">${h.change_reason}</span> (${MATCH_RULE_LABELS[h.match_type] || h.match_type})</p>
+                    <p class="text-[11px] text-slate-500 font-mono">Effective: ${h.effective_from} ${h.effective_to ? '&rarr; ' + h.effective_to : '&rarr; Present'}</p>
+                `;
+                timeline.appendChild(item);
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        async function testIngestPlayground() {
+            const payload = {
+                source_system: document.getElementById('play-system').value,
+                source_record_id: document.getElementById('play-record-id').value,
+                first_name: document.getElementById('play-first-name').value,
+                last_name: document.getElementById('play-last-name').value,
+                email: document.getElementById('play-email').value,
+                phone: document.getElementById('play-phone').value,
+                national_id: document.getElementById('play-ssn').value || null,
+                postal_code: document.getElementById('play-zip').value,
+                country: document.getElementById('play-country').value,
+                event_timestamp: new Date().toISOString()
+            };
+
+            const pill = document.getElementById('play-status-pill');
+            const out = document.getElementById('play-output');
+            pill.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded bg-amber-100 text-amber-800';
+            pill.innerText = 'EVALUATING...';
+
+            try {
+                const res = await fetch('/api/ingest-single', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                out.innerText = JSON.stringify(json, null, 2);
+
+                if (json.is_conflict) {
+                    pill.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded bg-rose-100 text-rose-800';
+                    pill.innerText = 'CONFLICT DETECTED';
+                } else if (json.is_new_canonical) {
+                    pill.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded bg-purple-100 text-purple-800';
+                    pill.innerText = 'NEW CANONICAL PROVISIONED';
+                } else {
+                    pill.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800';
+                    pill.innerText = 'LINKED TO EXISTING MASTER';
+                }
+            } catch (err) {
+                out.innerText = String(err);
+                pill.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded bg-red-100 text-red-800';
+                pill.innerText = 'ERROR';
+            }
+        }
+
+        async function refreshAll() {
+            const icon = document.getElementById('btn-header-refresh-icon');
+            if (icon) icon.classList.add('fa-spin');
+            try {
+                await Promise.all([loadDashboard(), loadMappings(), loadEntities(), loadUnresolved()]);
+                showToast('All system data refreshed successfully!', 'success');
+            } catch (err) {
+                showToast('Failed to refresh data: ' + err.message, 'error');
+            } finally {
+                setTimeout(() => {
+                    if (icon) icon.classList.remove('fa-spin');
+                }, 400);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', refreshAll);
+    </script>
+</body>
+</html>

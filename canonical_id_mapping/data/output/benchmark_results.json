@@ -1,0 +1,37 @@
+{
+  "record_count": 10000,
+  "batch_size": 5000,
+  "generation_time_sec": 0.205,
+  "execution_time_sec": 1.963,
+  "throughput_records_per_sec": 5094.6,
+  "latency_per_record_ms": 0.1963,
+  "database_size_mb": 7.78,
+  "metrics": {
+    "run_id": "run_20261111_164035_aa7a71",
+    "pipeline_name": "canonical_id_pipeline",
+    "batch_id": null,
+    "source_file": "data/benchmark_data.jsonl",
+    "start_time": "2026-11-11T16:40:35.498163+00:00",
+    "end_time": "2026-11-11T16:40:37.362962+00:00",
+    "duration_seconds": 1.8648,
+    "status": "PARTIAL_SUCCESS",
+    "input_records_count": 10000,
+    "valid_records_count": 9523,
+    "mapped_existing_count": 4200,
+    "created_canonical_count": 4998,
+    "unresolved_count": 325,
+    "rejected_count": 461,
+    "duplicate_records_count": 94,
+    "error_message": null
+  },
+  "optimization_analysis": {
+    "applied_optimizations": [
+      "SQLite Write-Ahead Logging (WAL) mode for concurrency and zero lock overhead",
+      "PRAGMA synchronous = NORMAL to reduce synchronous disk flushes",
+      "Pre-compiled compound B-Tree indexes on natural matching keys (email, phone, national_id, name+zip)",
+      "Chunked streaming ingestion (generator-based) keeping process memory footprint flat under 50MB",
+      "Single-transaction batch processing scope"
+    ],
+    "identified_future_optimization": "In-memory trie / inverted index pre-loading: For multi-million record workloads, pre-loading target candidate keys into a bloom filter or hash map eliminates individual SQLite B-Tree traversals, projected to increase throughput by ~3x."
+  }
+}

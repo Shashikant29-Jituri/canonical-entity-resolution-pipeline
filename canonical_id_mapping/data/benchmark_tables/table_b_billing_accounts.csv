@@ -1,0 +1,13 @@
+account_id,full_name,primary_email,contact_phone,billing_zip,tax_id
+BILL_201,Satya Nadella,satya@microsoft.com,4255550100,98052,US-SSN-987110001
+BILL_202,Jensen Huang,jensen@nvidia.com,4085550188,95051,US-SSN-987110002
+BILL_203,Patrick Collison,p.collison@stripe.com,4155550142,94107,US-SSN-987110003
+BILL_204,Demis Hassabis,demis.hassabis@google.com,442079460111,N1C4AG,UK-NINO-QQ123456A
+BILL_205,Fei-Fei Li,fei-fei.li@stanford.edu,6505550192,94305,US-SSN-987110005
+BILL_206,Sam Altman,sam.altman@ycombinator.com,4155550155,94110,US-SSN-987110006
+BILL_207,Linus B Torvalds,linus@kernel.org,5035550177,97229,US-SSN-987110007
+BILL_208,Tobi Lütke,tobi.lutke@shopify.com,6135550133,K1P 1J1,CA-SIN-998877665
+BILL_209,Kelsey Hightower,kelsey.hightower@google.com,5035550166,97201,US-SSN-987110009
+BILL_210,David Miller,dmiller_architect@outlook.com,2125550122,10001,US-SSN-555667788
+BILL_211,Contradictory Billing,satya@microsoft.com,4255550199,98052,
+

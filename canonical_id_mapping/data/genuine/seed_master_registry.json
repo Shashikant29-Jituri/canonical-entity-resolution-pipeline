@@ -1,0 +1,99 @@
+[
+  {
+    "canonical_id": "CAN-SATYA-01",
+    "primary_name": "satya nadella",
+    "primary_email": "satya@microsoft.com",
+    "primary_phone": "4255550100",
+    "national_id": "US-SSN-987110001",
+    "postal_code": "98052",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-JENSEN-02",
+    "primary_name": "jensen huang",
+    "primary_email": "jensen@nvidia.com",
+    "primary_phone": "4085550188",
+    "national_id": "US-SSN-987110002",
+    "postal_code": "95051",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-PATRICK-03",
+    "primary_name": "patrick collison",
+    "primary_email": "patrick@stripe.com",
+    "primary_phone": "4155550142",
+    "national_id": "US-SSN-987110003",
+    "postal_code": "94107",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-DEMIS-04",
+    "primary_name": "demis hassabis",
+    "primary_email": "demis@deepmind.com",
+    "primary_phone": "442079460111",
+    "national_id": "UK-NINO-QQ123456A",
+    "postal_code": "N1C4AG",
+    "country": "GB",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-FEIFEI-05",
+    "primary_name": "fei-fei li",
+    "primary_email": "feifeili@cs.stanford.edu",
+    "primary_phone": "6505550192",
+    "national_id": "US-SSN-987110005",
+    "postal_code": "94305",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-DAVID-NY1",
+    "primary_name": "david miller",
+    "primary_email": "david.miller.ny@gmail.com",
+    "primary_phone": "2125550110",
+    "national_id": "US-SSN-111223344",
+    "postal_code": "10001",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-DAVID-NY2",
+    "primary_name": "david miller",
+    "primary_email": "dmiller_architect@outlook.com",
+    "primary_phone": "2125550122",
+    "national_id": "US-SSN-555667788",
+    "postal_code": "10001",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-ASST-01",
+    "primary_name": "sarah connor",
+    "primary_email": "sarah.connor@ea-services.com",
+    "primary_phone": "4255550199",
+    "national_id": "US-SSN-987119999",
+    "postal_code": "98052",
+    "country": "US",
+    "created_at": "2026-01-01T08:00:00Z",
+    "updated_at": "2026-01-01T08:00:00Z",
+    "entity_version": 1
+  }
+]
+

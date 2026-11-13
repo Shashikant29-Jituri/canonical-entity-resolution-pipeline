@@ -1,0 +1,86 @@
+{
+  "test_dataset_description": "Ground truth expected outcomes for data/sample/source_records_sample.json",
+  "expected_outcomes": [
+    {
+      "source_system": "crm_salesforce",
+      "source_record_id": "SF_1001",
+      "expected_status": "MAPPED_EXISTING",
+      "expected_canonical_id": "CAN-0001",
+      "expected_match_type": "EXACT_NATIONAL_ID",
+      "notes": "Matches CAN-0001 via normalized national_id (SSN: 999110001)"
+    },
+    {
+      "source_system": "billing_stripe",
+      "source_record_id": "STRIPE_2001",
+      "expected_status": "MAPPED_EXISTING",
+      "expected_canonical_id": "CAN-0001",
+      "expected_match_type": "RULE_EMAIL",
+      "notes": "Matches CAN-0001 via normalized email (alice@example.com)"
+    },
+    {
+      "source_system": "support_zendesk",
+      "source_record_id": "ZD_3001",
+      "expected_status": "MAPPED_EXISTING",
+      "expected_canonical_id": "CAN-0002",
+      "expected_match_type": "RULE_PHONE",
+      "notes": "Matches CAN-0002 via normalized phone (5550102)"
+    },
+    {
+      "source_system": "web_segment",
+      "source_record_id": "SEG_4001",
+      "expected_status": "CREATED_CANONICAL",
+      "expected_canonical_id_prefix": "CAN-",
+      "expected_match_type": "NEW_CANONICAL",
+      "notes": "Novel valid customer profile mints deterministic canonical ID"
+    },
+    {
+      "source_system": "web_segment",
+      "source_record_id": "SEG_4001",
+      "expected_status": "DUPLICATE_SKIPPED",
+      "notes": "Exact intra-batch duplicate key and attributes; deduplicated cleanly"
+    },
+    {
+      "source_system": "crm_salesforce",
+      "source_record_id": "SF_CONFLICT_01",
+      "expected_status": "QUARANTINED_UNRESOLVED",
+      "expected_reason_code": "CONFLICT_ONE_TO_MANY_CANONICAL",
+      "notes": "Cross-rule conflict: Email points to CAN-0001, phone points to CAN-0002"
+    },
+    {
+      "source_system": "legacy_db",
+      "source_record_id": "LEG_AMBIG_01",
+      "expected_status": "QUARANTINED_UNRESOLVED",
+      "expected_reason_code": "CONFLICT_AMBIGUOUS_RULE_MATCH",
+      "notes": "Ambiguous composite rule match: Name + Postal Code matches both CAN-0003 and CAN-0004"
+    },
+    {
+      "source_system": "bad_feed",
+      "source_record_id": "BAD_DOB_01",
+      "expected_status": "QUARANTINED_REJECTED",
+      "expected_reason_code": "SCHEMA_VALIDATION_ERROR",
+      "notes": "Malformed date_of_birth ('31-02-1990') violates YYYY-MM-DD contract"
+    },
+    {
+      "source_system": "bad_feed",
+      "source_record_id": "",
+      "expected_status": "QUARANTINED_REJECTED",
+      "expected_reason_code": "MISSING_REQUIRED_KEY",
+      "notes": "Empty source_record_id violates primary key constraint"
+    },
+    {
+      "source_system": "mobile_app",
+      "source_record_id": "MOB_EMPTY_ATTRS",
+      "expected_status": "QUARANTINED_UNRESOLVED",
+      "expected_reason_code": "UNRESOLVED_INSUFFICIENT_ATTRIBUTES",
+      "notes": "Insufficient attributes to establish canonical identity"
+    },
+    {
+      "source_system": "billing_stripe",
+      "source_record_id": "STRIPE_2001",
+      "expected_status": "QUARANTINED_UNRESOLVED",
+      "expected_reason_code": "CONFLICT_SOURCE_KEY_COLLISION",
+      "notes": "Intra-batch duplicate key with contradictory natural attributes"
+    }
+  ]
+}
+

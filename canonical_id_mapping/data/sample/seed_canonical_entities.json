@@ -1,0 +1,51 @@
+[
+  {
+    "canonical_id": "CAN-0001",
+    "primary_name": "alice smith",
+    "primary_email": "alice@example.com",
+    "primary_phone": "5550101",
+    "national_id": "999110001",
+    "postal_code": "94101",
+    "country": "US",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-0002",
+    "primary_name": "bob jones",
+    "primary_email": "bob@example.com",
+    "primary_phone": "5550102",
+    "national_id": "999110002",
+    "postal_code": "10001",
+    "country": "US",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-0003",
+    "primary_name": "charlie brown",
+    "primary_email": "charlie@example.com",
+    "primary_phone": "5550103",
+    "national_id": "999110003",
+    "postal_code": "60601",
+    "country": "US",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "entity_version": 1
+  },
+  {
+    "canonical_id": "CAN-0004",
+    "primary_name": "charlie brown",
+    "primary_email": "cbrown_jr@domain.org",
+    "primary_phone": "5550104",
+    "national_id": "999110004",
+    "postal_code": "60601",
+    "country": "US",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "entity_version": 1
+  }
+]
+

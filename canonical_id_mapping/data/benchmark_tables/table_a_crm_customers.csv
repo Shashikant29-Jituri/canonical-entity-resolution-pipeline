@@ -1,0 +1,12 @@
+customer_id,first_name,last_name,email,phone,address,city,state,zip_code,tax_id
+CRM_101,Satya,Nadella,satya.nadella@microsoft.com,425-555-0100,One Microsoft Way,Redmond,WA,98052,US-SSN-987110001
+CRM_102,Jensen,Huang,jensen.huang@nvidia.com,408-555-0188,2788 San Tomas Expressway,Santa Clara,CA,95051,US-SSN-987110002
+CRM_103,Patrick,Collison,patrick@stripe.com,415-555-0142,354 Oyster Point Blvd,South San Francisco,CA,94107,US-SSN-987110003
+CRM_104,Demis,Hassabis,demis@deepmind.com,+44-20-7946-0111,6 Pancras Square,London,UK,N1C4AG,UK-NINO-QQ123456A
+CRM_105,Fei-Fei,Li,feifeili@cs.stanford.edu,650-555-0192,450 Serra Mall,Stanford,CA,94305,US-SSN-987110005
+CRM_106,Sam,Altman,sam@openai.com,415-555-0155,3180 18th St,San Francisco,CA,94110,US-SSN-987110006
+CRM_107,Linus,Torvalds,torvalds@linux-foundation.org,503-555-0177,1020 SW 5th Ave,Portland,OR,97229,US-SSN-987110007
+CRM_108,Tobias,Lütke,tobi@shopify.com,613-555-0133,150 Elgin St,Ottawa,ON,K1P 1J1,CA-SIN-998877665
+CRM_109,Kelsey,Hightower,kelsey@hightower.cloud,503-555-0166,421 SW 6th Ave,Portland,OR,97201,US-SSN-987110009
+CRM_110,David,Miller,david.miller.ny@gmail.com,212-555-0110,350 5th Ave,New York,NY,10001,US-SSN-111223344
+

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "canonical-id-mapping"
+version = "1.0.0"
+description = "Production-grade Entity Resolution & Canonical ID Mapping Pipeline"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
